@@ -1,0 +1,6 @@
+Synergy
+=======
+
+Getting Started
+---------------
+
