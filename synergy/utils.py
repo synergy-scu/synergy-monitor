@@ -6,12 +6,16 @@ def device_uuid():
 
 	if exists:
 		f = open('uuid.txt', 'r')
-		uuid = f.read() 
+		uuid = f.read()
+
 		return uuid
+
 	else:
 		f = open('uuid.txt', 'w')
+
 		uuid = str(uuidv4())
 		f.write(uuid)
+
 		f.close()
 		return uuid
 		
