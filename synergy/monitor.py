@@ -80,9 +80,9 @@ def monitor_loop():
             
         if (currents != prev):
             data = {
-                "uuid": uuid,
-                "epoch": timestamp_millis,
-                "channels": currents,
+                'uuid': uuid,
+                'epoch': timestamp_millis,
+                'channels': currents,
             }
             # print(data)
             string_data = json.dumps(data)
