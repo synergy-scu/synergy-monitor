@@ -1,21 +1,26 @@
 import os
 from uuid import uuid4 as uuidv4
 
-def device_uuid():
+def get_uuids(numChannels):
 	exists = os.path.isfile('uuid.txt')
 
 	if exists:
 		f = open('uuid.txt', 'r')
-		uuid = f.read()
-
-		return uuid
+		uuids = f.readlines()
+		return uuids
 
 	else:
+        uuids = []
 		f = open('uuid.txt', 'w')
 
-		uuid = str(uuidv4())
-		f.write(uuid)
+		device_uuid = str(uuidv4())
+		f.write(device_uuid + "\n")
+        uuids.append(device_uuid)
+
+        for i in numChannels:
+            ch_uuid = str(uuidv4())
+		    f.write(ch_uuid + "\n")
+            uuids.append(ch_uuid)
 
 		f.close()
-		return uuid
-		
+		return uuids
