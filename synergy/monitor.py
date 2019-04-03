@@ -8,11 +8,10 @@ import math
 from smbus2 import SMBus
 
 from .publisher import publish_data
-from .utils import device_uuid
+from .utils import get_uuids
 
 def monitor_loop():
  
-    uuid = device_uuid()
     epoch = datetime.datetime(1970,1,1)
 
     # Get I2C bus
@@ -37,6 +36,19 @@ def monitor_loop():
     typeOfSensor = deviceData[0]
     maxCurrent = deviceData[1]
     numChannels = deviceData[2]
+
+    uuids = get_uuids(numChannels)
+    device_id = uuids[0]
+
+    initialization_data = {
+        'type': 'initialize',
+        'payload': [
+            'deviceID': device_id,
+            'channels': uuids[1:],
+        ],
+    }
+    publish_data(json.dumps(initialization_data))
+
 
     # Bytes:
     # 1. PECMAC125A address, 0x2A(42)
@@ -78,15 +90,19 @@ def monitor_loop():
             current = (msb1 * 65536 + msb * 256 + lsb) / 1000.0
             currents.append(round(current, 3))
             
-        if (currents != prev):
-            data = {
-                'uuid': uuid,
-                'epoch': timestamp_millis,
-                'channels': currents,
-            }
-            # print(data)
-            string_data = json.dumps(data)
-            publish_data(string_data)
+        for i in range(1, numChannels + 1):
+            if (currents[i] != prev[i]):
+                channel_id = uuids[i]
+                data = {
+                    'type': 'usage',
+                    'payload': {
+                        'deviceID': device_id
+                        'channelID': channel_id,
+                        'timestamp': timestamp_millis,
+                        'amps': currents[i],
+                    }
+                }
+                publish_data(json.dumps(data))
             
         prev = currents
         time.sleep(0.5)
