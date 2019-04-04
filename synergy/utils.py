@@ -16,7 +16,7 @@ def get_uuids(numChannels):
     f.write(device_uuid + "\n")
     uuids.append(device_uuid)
 
-    for _ in numChannels:
+    for _ in range(0, numChannels):
         ch_uuid = str(uuidv4())
         f.write(ch_uuid + "\n")
         uuids.append(ch_uuid)
