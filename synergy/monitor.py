@@ -90,9 +90,9 @@ def monitor_loop():
             current = (msb1 * 65536 + msb * 256 + lsb) / 1000.0
             currents.append(round(current, 3))
             
-        for i in range(1, numChannels + 1):
+        for i in range(0, numChannels):
             if (currents[i] != prev[i]):
-                channel_id = uuids[i]
+                channel_id = uuids[i + 1]
                 data = {
                     'type': 'usage',
                     'payload': {
