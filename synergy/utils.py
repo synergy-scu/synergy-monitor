@@ -6,7 +6,7 @@ def get_uuids(numChannels):
 
     if exists:
         f = open('uuid.txt', 'r')
-        uuids = f.readlines()
+        uuids = f.read().splitlines()
         return uuids
 
     uuids = []
