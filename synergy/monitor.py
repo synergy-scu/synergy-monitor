@@ -91,7 +91,7 @@ def monitor_loop():
             currents.append(round(current, 3))
             
         for i in range(0, numChannels):
-            if (currents[i] != prev[i]):
+            if (currents[i] >= 0 and prev[i] != 0):
                 channel_id = uuids[i + 1]
                 data = {
                     'type': 'usage',
@@ -102,6 +102,7 @@ def monitor_loop():
                         'amps': currents[i],
                     }
                 }
+                #print(data)
                 publish_data(json.dumps(data))
             
         prev = currents
