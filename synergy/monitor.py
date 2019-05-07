@@ -59,14 +59,22 @@ def monitor_loop():
     # Calculate checksum (page 9): https://media.ncd.io/sites/2/20170721134908/Current-Monitoring-Reference-Guide-24.pdf
     #    checksum = Sum of bytes 2-8
     #    checksum = 146+106+1+1+8 = 262 = 00000001 00000110 = 0x06
+    #                               256 = 00000001 00000000 = 0x00
     #                        3    4     5     6     7     8     9
     get8ChannelsCommand = [0x6A, 0x01, 0x01, 0x08, 0x00, 0x00, 0x06]    #channels 1-8
+    get2ChannelsCommand = [0x6A, 0x01, 0x01, 0x02, 0x00, 0x00, 0x00]
+
+    if numChannels == 2:
+        getChannelCommand = get2ChannelsCommand
+    elif numChannels == 8:
+        getChannelCommand = get8ChannelsCommand
+
     time.sleep(0.5)
 
     # Real-time data loop
     prev = [-1] * numChannels
     while (1):
-        bus.write_i2c_block_data(0x2A, 0x92, get8ChannelsCommand)
+        bus.write_i2c_block_data(0x2A, 0x92, getChannelCommand)
 
         # PECMAC125A address, 0x2A(42)
         # Read data back from 0x55(85), (No. of Channels * 3 bytes) + 1
