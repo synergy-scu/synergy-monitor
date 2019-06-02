@@ -10,6 +10,8 @@ from smbus2 import SMBus
 from .publisher import publish_data
 from .utils import get_uuids
 
+address = 0x2A
+
 def monitor_loop():
  
     epoch = datetime.datetime(1970,1,1)
@@ -22,7 +24,7 @@ def monitor_loop():
     # 0x6A(106), 0x02(2), 0x00(0),0x00(0), 0x00(0) 0x00(0), 0xFE(254)
     # Header byte-2, command-2, byte 3, 4, 5 and 6 are reserved, checksum
     getDeviceCommand = [0x6A, 0x02, 0x00, 0x00, 0x00, 0x00, 0xFE]
-    bus.write_i2c_block_data(0x2A, 0x92, getDeviceCommand)
+    bus.write_i2c_block_data(address, 0x92, getDeviceCommand)
 
     # Current monitor reads every half a second
     time.sleep(0.5)
@@ -30,16 +32,22 @@ def monitor_loop():
     # PECMAC125A address, 0x2A(42)
     # Read data back from 0x55(85), 3 bytes
     # deviceData = [Type of Sensor, Maximum Current, No. of Channels]
-    deviceData = bus.read_i2c_block_data(0x2A, 0x55, 3)
+    deviceData = bus.read_i2c_block_data(address, 0x55, 3)
 
     # Convert the data
     typeOfSensor = deviceData[0]
     maxCurrent = deviceData[1]
     numChannels = deviceData[2]
 
+    if numChannels == 0:
+        print('No AC Monitor detected. Please check your connection and try again.')
+        exit(1)
+
     uuids = get_uuids(numChannels)
     device_id = uuids[0]
 
+    print('Initializing Device...')
+    print('AC monitor with {} channels detected...'.format(numChannels))
     initialization_data = {
         'type': 'initialize',
         'payload': {
@@ -61,25 +69,34 @@ def monitor_loop():
     #    checksum = 146+106+1+1+8 = 262 = 00000001 00000110 = 0x06
     #                               256 = 00000001 00000000 = 0x00
     #                        3    4     5     6     7     8     9
-    get8ChannelsCommand = [0x6A, 0x01, 0x01, 0x08, 0x00, 0x00, 0x06]    #channels 1-8
+    get1ChannelCommand = [0x6A, 0x01, 0x01, 0x02, 0x00, 0x00, 0xFF]
     get2ChannelsCommand = [0x6A, 0x01, 0x01, 0x02, 0x00, 0x00, 0x00]
+    get4ChannelsCommand = [0x6A, 0x01, 0x01, 0x02, 0x00, 0x00, 0x02]
+    get8ChannelsCommand = [0x6A, 0x01, 0x01, 0x08, 0x00, 0x00, 0x06]    #channels 1-8
+    get12ChannelsCommand = [0x6A, 0x01, 0x01, 0x08, 0x00, 0x00, 0x0C]
 
+    getChannelCommand = get1ChannelCommand
     if numChannels == 2:
         getChannelCommand = get2ChannelsCommand
+    elif numChannels == 4:
+        getChannelCommand = get4ChannelsCommand
     elif numChannels == 8:
         getChannelCommand = get8ChannelsCommand
+    elif numChannels == 12:
+        getChannelCommand = get12ChannelsCommand
 
     time.sleep(0.5)
 
     # Real-time data loop
     prev = [-1] * numChannels
+    print('Connected to MQTT. Beginning Energy Usage Collection')
     while (1):
-        bus.write_i2c_block_data(0x2A, 0x92, getChannelCommand)
+        bus.write_i2c_block_data(address, 0x92, getChannelCommand)
 
         # PECMAC125A address, 0x2A(42)
         # Read data back from 0x55(85), (No. of Channels * 3 bytes) + 1
         # Single channel = [current MSB1, current MSB, current LSB]
-        readings = bus.read_i2c_block_data(0x2A, 0x55, (numChannels * 3) + 1)
+        readings = bus.read_i2c_block_data(address, 0x55, (numChannels * 3) + 1)
         
         # see https://stackoverflow.com/a/25722275
         now = datetime.datetime.now()
